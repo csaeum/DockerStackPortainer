@@ -1,0 +1,30 @@
+volumes:
+  portainer_data:
+    driver: local
+    driver_opts:
+      device: ${PWD}/volumes
+      o: bind
+      type: none
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    container_name: ${COMPOSE_PROJECT_NAME}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=${HOSTRULE}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure-https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsEncrypt
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadBalancer.server.port=9000
+    networks:
+      - ${PROXY_NETWORK}
+    restart: ${RESTART}
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  traefik_proxy_network:
+    external: true
+    name: ${PROXY_NETWORK}
