@@ -1,25 +1,29 @@
-volumes:
-  portainer_data:
-    driver: local
-    driver_opts:
-      device: ${PWD}/volumes
-      o: bind
-      type: none
-
+# docker-compose.yaml - Portainer - START
 services:
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:lts
     command: -H unix:///var/run/docker.sock
     container_name: ${COMPOSE_PROJECT_NAME}
     labels:
       - traefik.enable=true
+
+      # HTTP Router
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.rule=${HOSTRULE}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.entrypoints=web-http
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-http.middlewares=redirect-to-https@file
+
+      # HTTPS Router
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=${HOSTRULE}
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure-https
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsEncrypt
-      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadBalancer.server.port=9000
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.options=modern@file
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=geo-block@file,security-headers@file,compression@file,rate-limit@file
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.passHostHeader=true
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9000
+
     networks:
       - ${PROXY_NETWORK}
-    restart: ${RESTART}
+    restart: "unless-stopped"
     volumes:
       - portainer_data:/data
       - /var/run/docker.sock:/var/run/docker.sock
@@ -28,3 +32,12 @@ networks:
   traefik_proxy_network:
     external: true
     name: ${PROXY_NETWORK}
+
+volumes:
+  portainer_data:
+    driver: local
+    driver_opts:
+      device: ${PWD}/volumes
+      o: bind
+      type: none
+# docker-compose.yaml - Portainer - ENDE

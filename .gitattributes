@@ -1,0 +1,33 @@
+# Git Export Configuration
+# Files and directories excluded from git archive (ZIP/tar.gz releases)
+
+# Development & CI/CD files
+.github/ export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.yamllint.yml export-ignore
+
+# IDE files
+.idea/ export-ignore
+.vscode/ export-ignore
+*.iml export-ignore
+
+# Documentation for developers (not end users)
+CONTRIBUTING.md export-ignore
+.editorconfig export-ignore
+
+# Git files
+.git/ export-ignore
+
+# Line ending normalization
+* text=auto
+
+# Docker files
+docker-compose.yaml text eol=lf
+.env.example text eol=lf
+
+# README files
+*.md text eol=lf
+
+# Shell scripts
+*.sh text eol=lf

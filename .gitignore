@@ -1,0 +1,34 @@
+# Environment Variables
+.env
+
+# IDE - PhpStorm / IntelliJ IDEA
+.idea/
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# Portainer Data
+volumes/*
+!volumes/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp

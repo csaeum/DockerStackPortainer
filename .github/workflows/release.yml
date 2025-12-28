@@ -1,0 +1,72 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create release archive
+        run: |
+          # Create archive using git archive (respects .gitattributes)
+          git archive --format=zip --prefix=portainer-stack/ HEAD -o portainer-stack.zip
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - get all commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since previous tag
+            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Save to file
+          echo "## Changes" > changelog.md
+          echo "" >> changelog.md
+          echo "$CHANGELOG" >> changelog.md
+          echo "" >> changelog.md
+          echo "## Installation" >> changelog.md
+          echo "" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/portainer-stack.zip" >> changelog.md
+          echo "unzip portainer-stack.zip" >> changelog.md
+          echo "cd portainer-stack" >> changelog.md
+          echo "cp .env.example .env" >> changelog.md
+          echo "# Edit .env with your settings" >> changelog.md
+          echo "docker-compose up -d" >> changelog.md
+          echo '```' >> changelog.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Portainer Stack v${{ steps.get_version.outputs.VERSION }}
+          body_path: changelog.md
+          files: portainer-stack.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update latest tag
+        run: |
+          git tag -f latest
+          git push -f origin latest
